@@ -26,13 +26,13 @@ namespace Goograsshopper.Components
         {
             pManager.AddGenericParameter(default, default, default, default);
             pManager.AddGenericParameter(default, default, default, default);
+            pManager.AddGenericParameter(default, default, default, default);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             Sheet sheet = null;
             DA.GetData("Sheet", ref sheet);
-
 
             if (Params.Output.Any(p => p.Name == "Name"))
                 DA.SetData("Name", sheet.Properties.Title);
@@ -42,6 +42,10 @@ namespace Goograsshopper.Components
                 DA.SetData("ID", sheet.Properties.SheetId);
             if (Params.Output.Any(p => p.Name == "Index"))
                 DA.SetData("Index", sheet.Properties.Index);
+            if (Params.Output.Any(p => p.Name == "Column Count"))
+                DA.SetData("Column Count", sheet.Properties.GridProperties.ColumnCount);
+            if (Params.Output.Any(p => p.Name == "Row Count"))
+                DA.SetData("Row Count", sheet.Properties.GridProperties.RowCount);
         }
 
         public bool CanInsertParameter(GH_ParameterSide side, int index)
@@ -51,7 +55,7 @@ namespace Goograsshopper.Components
 
         public bool CanRemoveParameter(GH_ParameterSide side, int index)
         {
-            return side == GH_ParameterSide.Output && index < Params.Output.Count && index > 0;
+            return side == GH_ParameterSide.Output && index < Params.Output.Count && index > 2;
         }
 
         private List<IGH_Param> m_AdditionalParams = new List<IGH_Param>
@@ -62,10 +66,16 @@ namespace Goograsshopper.Components
                 NickName = "N",
                 Access = GH_ParamAccess.item,
             },
-            new Param_Boolean
+            new Param_Integer
             {
-                Name = "Hidden",
-                NickName = "H",
+                Name = "Column Count",
+                NickName = "ColN",
+                Access = GH_ParamAccess.item,
+            },
+            new Param_Integer
+            {
+                Name = "Row Count",
+                NickName = "RowN",
                 Access = GH_ParamAccess.item,
             },
             new Param_String
@@ -79,7 +89,13 @@ namespace Goograsshopper.Components
                 Name = "Index",
                 NickName = "i",
                 Access = GH_ParamAccess.item,
-            }
+            },
+            new Param_Boolean
+            {
+                Name = "Hidden",
+                NickName = "H",
+                Access = GH_ParamAccess.item,
+            },
         };
 
         public IGH_Param CreateParameter(GH_ParameterSide side, int index)
