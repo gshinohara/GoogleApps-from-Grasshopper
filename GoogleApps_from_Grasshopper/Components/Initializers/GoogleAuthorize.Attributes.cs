@@ -1,6 +1,5 @@
 ﻿using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
-using Google.Apis.Sheets.v4;
 using Goograsshopper.Components.Abstracts;
 using Grasshopper.GUI;
 using Grasshopper.GUI.Canvas;
@@ -8,39 +7,22 @@ using Grasshopper.Kernel;
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace Goograsshopper.Components.Initializers
 {
-    internal class GoogleAuthorize_Attributes : GH_Attributes<GoogleAuthorize>
+    internal partial class GoogleAuthorize_Attributes : GH_Attributes<GoogleAuthorize>
     {
-        private Task<UserCredential> m_UserCredentialTask;
+        private InputForm m_InputForm;
+
+        public UserCredential Credential => (m_InputForm != null) ? m_InputForm.GetCredential() : null;
 
         public PointF Grip => new PointF(Bounds.Left + 100, Bounds.Bottom);
 
-        private RectangleF ButtonBounds;
+        private RectangleF ButtonBounds { get; set; }
 
         public GoogleAuthorize_Attributes(GoogleAuthorize owner) : base(owner)
         {
-            m_UserCredentialTask = null;
-        }
-
-        private void SetCredential()
-        {
-            using (OpenFileDialog openFileDialog = new OpenFileDialog())
-            {
-                openFileDialog.Title = "Select your client secret file";
-                openFileDialog.Filter = "|*.json";
-
-                if (openFileDialog.ShowDialog() == DialogResult.OK)
-                {
-                    GoogleClientSecrets clientSecrets = GoogleClientSecrets.FromFile(openFileDialog.FileName);
-                    string[] scopes = new string[] { SheetsService.Scope.Spreadsheets };
-                    m_UserCredentialTask = GoogleWebAuthorizationBroker.AuthorizeAsync(clientSecrets.Secrets, scopes, "user", CancellationToken.None);
-                }
-            }
         }
 
         protected override void Layout()
@@ -86,10 +68,10 @@ namespace Goograsshopper.Components.Initializers
                     fullCapsule.Dispose();
 
                     string text_auth;
-                    if (Owner.GetUserCredential() is UserCredential credential)
+                    if (Credential is UserCredential credential)
                     {
                         var service = new BaseClientService.Initializer() { HttpClientInitializer = credential };
-                        text_auth = Owner.GetUserCredential().Token.AccessToken;
+                        text_auth = Owner.Credential.Token.AccessToken;
                     }
                     else
                     {
@@ -122,7 +104,9 @@ namespace Goograsshopper.Components.Initializers
             }
             else if (e.Button == MouseButtons.Left && ButtonBounds.Contains(e.CanvasLocation))
             {
-                SetCredential();
+                m_InputForm = new InputForm();
+                m_InputForm.Show();
+
                 sender.Refresh();
                 return GH_ObjectResponse.Handled;
             }

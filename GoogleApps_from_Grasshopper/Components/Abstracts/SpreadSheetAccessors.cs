@@ -33,7 +33,7 @@ namespace Goograsshopper.Components.Abstracts
 
         protected SheetsService GetSheetsService()
         {
-            SheetsService service = new SheetsService(new BaseClientService.Initializer() { HttpClientInitializer = Parent.GetUserCredential() });
+            SheetsService service = new SheetsService(new BaseClientService.Initializer() { HttpClientInitializer = Parent.Credential });
             return service;
         }
 
@@ -46,7 +46,7 @@ namespace Goograsshopper.Components.Abstracts
                 .OrderBy(obj => GH_GraphicsUtil.Distance(Attributes.Pivot, (obj.Attributes as GoogleAuthorize_Attributes).Grip))
                 .FirstOrDefault() as GoogleAuthorize;
 
-            if (googleAuthorize != null && googleAuthorize.GetUserCredential() != null)
+            if (googleAuthorize != null && googleAuthorize.Credential != null)
                 Parent = googleAuthorize;
         }
     }
