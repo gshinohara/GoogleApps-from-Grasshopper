@@ -6,7 +6,7 @@ using System;
 
 namespace Goograsshopper.Components
 {
-    public class Component_ReadSpreadSheets : SpreadSheetAccessors
+    public class Component_ReadSpreadSheets : SpreadSheetsAccessors
     {
         public Component_ReadSpreadSheets()
           : base("Read SpreadSheets", "Read",
@@ -30,7 +30,7 @@ namespace Goograsshopper.Components
             string id = default;
             DA.GetData(0, ref id);
 
-            Spreadsheet ss = GetSheetsService().Spreadsheets.Get(id).Execute();
+            Spreadsheet ss = GetService().Spreadsheets.Get(id).Execute();
 
             DA.SetData(0, ss);
         }

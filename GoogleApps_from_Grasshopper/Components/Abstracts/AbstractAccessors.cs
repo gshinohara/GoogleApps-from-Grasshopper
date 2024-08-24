@@ -1,5 +1,4 @@
 ﻿using Google.Apis.Services;
-using Google.Apis.Sheets.v4;
 using Goograsshopper.Components.Initializers;
 using Grasshopper.GUI;
 using Grasshopper.Kernel;
@@ -8,7 +7,8 @@ using System.Linq;
 
 namespace Goograsshopper.Components.Abstracts
 {
-    public abstract class SpreadSheetAccessors : GH_Component
+    public abstract class AbstractAccessors<TService> : GH_Component
+        where TService : BaseClientService
     {
         private Guid m_ConnectedId;
 
@@ -22,7 +22,7 @@ namespace Goograsshopper.Components.Abstracts
             }
         }
 
-        public SpreadSheetAccessors(string name, string nickname, string description, string category, string subcategory) : base(name, nickname, description, category, subcategory)
+        public AbstractAccessors(string name, string nickname, string description, string category, string subcategory) : base(name, nickname, description, category, subcategory)
         {
         }
 
@@ -31,11 +31,7 @@ namespace Goograsshopper.Components.Abstracts
             m_ConnectedId = Guid.Empty;
         }
 
-        protected SheetsService GetSheetsService()
-        {
-            SheetsService service = new SheetsService(new BaseClientService.Initializer() { HttpClientInitializer = Parent.Credential });
-            return service;
-        }
+        protected abstract TService GetService();
 
         public override void AddedToDocument(GH_Document document)
         {
