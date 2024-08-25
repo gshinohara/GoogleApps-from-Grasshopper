@@ -3,6 +3,7 @@ using Eto.Forms;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Drive.v3;
 using Google.Apis.Sheets.v4;
+using Grasshopper;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,9 +18,9 @@ namespace Goograsshopper.Components.Initializers
         {
             private Task<UserCredential> m_task;
 
-            private bool m_IsDriveScope;
+            public bool IsDriveScope { get; private set; }
 
-            private bool m_IsSheetsScope;
+            public bool IsSheetsScope { get; private set; }
 
             public InputForm()
             {
@@ -30,16 +31,16 @@ namespace Goograsshopper.Components.Initializers
                 CheckBox checkBox_Drive = new CheckBox
                 {
                     Text = "Google Drive",
-                    Checked = m_IsDriveScope,
+                    Checked = IsDriveScope,
                 };
-                checkBox_Drive.CheckedChanged += (sender, e) => m_IsDriveScope = (bool)(sender as CheckBox).Checked;
+                checkBox_Drive.CheckedChanged += (sender, e) => IsDriveScope = (bool)(sender as CheckBox).Checked;
 
                 CheckBox checkBox_Sheets = new CheckBox
                 {
                     Text = "Google SpreadSheets",
-                    Checked = m_IsSheetsScope,
+                    Checked = IsSheetsScope,
                 };
-                checkBox_Sheets.CheckedChanged += (sender, e) => m_IsSheetsScope = (bool)(sender as CheckBox).Checked;
+                checkBox_Sheets.CheckedChanged += (sender, e) => IsSheetsScope = (bool)(sender as CheckBox).Checked;
 
                 Button button_SetCredential = new Button
                 {
@@ -79,9 +80,9 @@ namespace Goograsshopper.Components.Initializers
                         GoogleClientSecrets clientSecrets = GoogleClientSecrets.FromFile(openFileDialog.Filenames.FirstOrDefault());
 
                         List<string> scopes = new List<string>();
-                        if (m_IsDriveScope)
+                        if (IsDriveScope)
                             scopes.Add(SheetsService.Scope.Spreadsheets);
-                        if (m_IsDriveScope)
+                        if (IsDriveScope)
                             scopes.Add(DriveService.Scope.Drive);
 
                         m_task = GoogleWebAuthorizationBroker.AuthorizeAsync(clientSecrets.Secrets, scopes, "user", CancellationToken.None);
@@ -97,6 +98,13 @@ namespace Goograsshopper.Components.Initializers
                     return task.Result;
 
                 return null;
+            }
+
+            protected override void OnClosed(EventArgs e)
+            {
+                base.OnClosed(e);
+
+                Instances.ActiveCanvas.Refresh();
             }
         }
     }

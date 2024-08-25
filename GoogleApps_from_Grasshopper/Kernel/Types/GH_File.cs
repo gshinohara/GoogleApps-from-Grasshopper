@@ -18,9 +18,9 @@ namespace Goograsshopper.Kernel.Types
         {
         }
 
-        public override string TypeName => "File";
+        public override string TypeName => "File or Folder";
 
-        public override string TypeDescription => "File of Google Drive";
+        public override string TypeDescription => "File of Folder of Google Drive";
 
         public override bool IsValid => throw new NotImplementedException();
 

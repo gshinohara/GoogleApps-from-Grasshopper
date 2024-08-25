@@ -19,6 +19,12 @@ namespace Goograsshopper.Components.Initializers
 
         public PointF Grip => new PointF(Bounds.Left + 100, Bounds.Bottom);
 
+        private RectangleF AuthBounds { get; set; }
+
+        private RectangleF ScopeBounds_Drive { get; set; }
+
+        private RectangleF ScopeBounds_Sheets { get; set; }
+
         private RectangleF ButtonBounds { get; set; }
 
         public GoogleAuthorize_Attributes(GoogleAuthorize owner) : base(owner)
@@ -30,15 +36,33 @@ namespace Goograsshopper.Components.Initializers
             base.Layout();
 
             RectangleF rect = Bounds;
-            rect.Width = 200;
-            rect.Height = 100;
+            rect.Width = 250;
+            rect.Height = 150;
             Bounds = rect;
 
             RectangleF buttonRect = Bounds;
-            buttonRect.Y = buttonRect.Bottom - 22;
+            buttonRect.Y = Bounds.Bottom - 22;
             buttonRect.Height = 22;
             buttonRect.Inflate(-2, -2);
             ButtonBounds = buttonRect;
+
+            RectangleF scopeRect_Drive = Bounds;
+            scopeRect_Drive.Y = Bounds.Bottom - 50;
+            scopeRect_Drive.Height = 22;
+            scopeRect_Drive.Offset(40, 0);
+            ScopeBounds_Drive = scopeRect_Drive;
+
+            RectangleF scopeRect_Sheets = Bounds;
+            scopeRect_Sheets.Y = Bounds.Bottom - 70;
+            scopeRect_Sheets.Height = 22;
+            scopeRect_Sheets.Offset(40, 0);
+            ScopeBounds_Sheets = scopeRect_Sheets;
+
+            RectangleF authRect = Bounds;
+            authRect.Y = Bounds.Bottom - 100;
+            authRect.Height = 22;
+            authRect.Inflate(-2, -2);
+            AuthBounds = authRect;
         }
 
         protected override void Render(GH_Canvas canvas, Graphics graphics, GH_CanvasChannel channel)
@@ -77,7 +101,17 @@ namespace Goograsshopper.Components.Initializers
                     {
                         text_auth = "No authorization";
                     }
-                    graphics.DrawString(text_auth, GH_FontServer.StandardAdjusted, new SolidBrush(Color.Black), Bounds, GH_TextRenderingConstants.CenterCenter);
+                    graphics.DrawString(text_auth, GH_FontServer.StandardAdjusted, new SolidBrush(Color.Black), AuthBounds, GH_TextRenderingConstants.CenterCenter);
+
+                    Action<string, bool, RectangleF> drawScopeString = (string text_scope, bool isScope, RectangleF scopeBounds) =>
+                    {
+                        bool read = Credential is UserCredential && isScope;
+                        Font font = read ? GH_FontServer.StandardAdjusted : new Font(GH_FontServer.StandardAdjusted, FontStyle.Strikeout);
+                        Brush brush = read ? new SolidBrush(Color.Black) : new SolidBrush(Color.Gray);
+                        graphics.DrawString($"* {text_scope} : " + (read ? "Scoped" : "No scopes"), font, brush, scopeBounds, GH_TextRenderingConstants.NearCenter);
+                    };
+                    drawScopeString("Google Drive", m_InputForm is InputForm && m_InputForm.IsDriveScope, ScopeBounds_Drive);
+                    drawScopeString("Google SpreadSheets", m_InputForm is InputForm && m_InputForm.IsSheetsScope, ScopeBounds_Sheets);
 
                     GH_Capsule buttonCapsule = GH_Capsule.CreateTextCapsule(ButtonBounds, ButtonBounds, GH_Palette.Black, "Set a new Client Secret", 2, 0);
                     buttonCapsule.Render(graphics, Selected, false, false);

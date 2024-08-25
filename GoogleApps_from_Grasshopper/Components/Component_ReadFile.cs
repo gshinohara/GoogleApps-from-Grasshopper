@@ -1,10 +1,12 @@
-﻿using Google.Apis.Drive.v3.Data;
+﻿using Google.Apis.Drive.v3;
+using Google.Apis.Drive.v3.Data;
 using Goograsshopper.Components.Abstracts;
 using Goograsshopper.Kernel.Parameters;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Parameters;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace Goograsshopper.Components
@@ -67,7 +69,11 @@ namespace Goograsshopper.Components
                     string id = default;
                     DA.GetData("File ID", ref id);
 
-                    File file = GetService().Files.Get(id).Execute();
+                    FilesResource.GetRequest file_get = GetService().Files.Get(id);
+                    file_get.SupportsAllDrives = true;
+                    file_get.Fields = "id, name, webViewLink, parents, kind, mimeType";
+
+                    File file = file_get.Execute();
 
                     DA.SetData("File", file);
 
@@ -75,10 +81,12 @@ namespace Goograsshopper.Components
 
                 case ReadType.FilePath:
                     //TODO
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, @"Sorry for no implemantations, it don't work with the read type.");
                     break;
 
                 case ReadType.URL:
                     //TODO
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, @"Sorry for no implemantations, it don't work with the read type.");
                     break;
             }
         }
