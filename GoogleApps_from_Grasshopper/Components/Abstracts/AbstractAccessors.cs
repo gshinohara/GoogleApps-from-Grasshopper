@@ -7,12 +7,12 @@ using System.Linq;
 
 namespace Goograsshopper.Components.Abstracts
 {
-    public abstract class AbstractAccessors<TService> : GH_Component
+    public abstract class AbstractAccessors<TService> : GH_Component, IAbstractAccessors
         where TService : BaseClientService
     {
         private Guid m_ConnectedId;
 
-        internal GoogleAuthorize Parent
+        public GoogleAuthorize Parent
         {
             get => OnPingDocument().FindObject<GoogleAuthorize>(m_ConnectedId, true);
             set

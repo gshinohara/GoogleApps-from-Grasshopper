@@ -27,5 +27,7 @@ namespace Goograsshopper
         public static string SubCat_App => "App";
 
         public static string SubCat_SpreadSheets => "SpreadSheets";
+
+        public static string SubCat_Drive => "Drive";
     }
 }

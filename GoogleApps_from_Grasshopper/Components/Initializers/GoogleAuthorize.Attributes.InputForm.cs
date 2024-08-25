@@ -16,6 +16,7 @@ namespace Goograsshopper.Components.Initializers
         private class InputForm : Form
         {
             private Task<UserCredential> m_task;
+
             private bool m_IsDriveScope;
 
             private bool m_IsSheetsScope;
@@ -31,12 +32,14 @@ namespace Goograsshopper.Components.Initializers
                     Text = "Google Drive",
                     Checked = m_IsDriveScope,
                 };
+                checkBox_Drive.CheckedChanged += (sender, e) => m_IsDriveScope = (bool)(sender as CheckBox).Checked;
 
                 CheckBox checkBox_Sheets = new CheckBox
                 {
                     Text = "Google SpreadSheets",
                     Checked = m_IsSheetsScope,
                 };
+                checkBox_Sheets.CheckedChanged += (sender, e) => m_IsSheetsScope = (bool)(sender as CheckBox).Checked;
 
                 Button button_SetCredential = new Button
                 {

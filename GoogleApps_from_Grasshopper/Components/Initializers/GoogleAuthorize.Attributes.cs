@@ -50,7 +50,7 @@ namespace Goograsshopper.Components.Initializers
                 case GH_CanvasChannel.First:
                     foreach (Guid id in Owner.ConnectedIds)
                     {
-                        if (Owner.OnPingDocument().FindObject(id, true) is AbstractAccessors obj)
+                        if (Owner.OnPingDocument().FindObject(id, true) is IAbstractAccessors obj)
                         {
                             RectangleF rect = obj.Attributes.Bounds;
                             rect.Inflate(6, 6);
