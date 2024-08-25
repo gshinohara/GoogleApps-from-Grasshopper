@@ -26,7 +26,7 @@ namespace Goograsshopper.Components.Initializers
 
         private GoogleAuthorize_Attributes m_attributes;
 
-        private SpreadSheetAccessors m_target;
+        private IAbstractAccessors m_target;
 
         public GoogleAuthorize_LinkingInteraction(GH_Canvas canvas, GH_CanvasMouseEvent mouseEvent, GoogleAuthorize_Attributes attributes) : base(canvas, mouseEvent)
         {
@@ -47,7 +47,7 @@ namespace Goograsshopper.Components.Initializers
         public override GH_ObjectResponse RespondToMouseMove(GH_Canvas sender, GH_CanvasMouseEvent e)
         {
             GH_Document document = m_attributes.Owner.OnPingDocument();
-            if (document.FindObject(e.CanvasLocation, 5) is SpreadSheetAccessors obj && !(obj.Parent is GoogleAuthorize parent && parent != m_attributes.Owner))
+            if (document.FindObject(e.CanvasLocation, 5) is IAbstractAccessors obj && !(obj.Parent is GoogleAuthorize parent && parent != m_attributes.Owner))
                 m_target = obj;
             else
                 m_target = null;
@@ -60,7 +60,7 @@ namespace Goograsshopper.Components.Initializers
 
         public override GH_ObjectResponse RespondToMouseUp(GH_Canvas sender, GH_CanvasMouseEvent e)
         {
-            GoogleAuthorize component = m_attributes.Owner as GoogleAuthorize;
+            GoogleAuthorize component = m_attributes.Owner;
 
             if (m_target != null)
             {
@@ -68,7 +68,7 @@ namespace Goograsshopper.Components.Initializers
                 {
                     case LinkMode.Replace:
                         foreach (Guid id in component.ConnectedIds)
-                            component.OnPingDocument().FindObject<SpreadSheetAccessors>(id, true).ClearParent();
+                            component.OnPingDocument().FindObject<IAbstractAccessors>(id, true).ClearParent();
                         component.ConnectedIds.Clear();
                         m_target.Parent = component;
                         break;

@@ -1,6 +1,5 @@
 ﻿using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
-using Google.Apis.Sheets.v4;
 using Goograsshopper.Components.Abstracts;
 using Grasshopper.GUI;
 using Grasshopper.GUI.Canvas;
@@ -8,39 +7,28 @@ using Grasshopper.Kernel;
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace Goograsshopper.Components.Initializers
 {
-    internal class GoogleAuthorize_Attributes : GH_Attributes<GoogleAuthorize>
+    internal partial class GoogleAuthorize_Attributes : GH_Attributes<GoogleAuthorize>
     {
-        private Task<UserCredential> m_UserCredentialTask;
+        private InputForm m_InputForm;
+
+        public UserCredential Credential => (m_InputForm != null) ? m_InputForm.GetCredential() : null;
 
         public PointF Grip => new PointF(Bounds.Left + 100, Bounds.Bottom);
 
-        private RectangleF ButtonBounds;
+        private RectangleF AuthBounds { get; set; }
+
+        private RectangleF ScopeBounds_Drive { get; set; }
+
+        private RectangleF ScopeBounds_Sheets { get; set; }
+
+        private RectangleF ButtonBounds { get; set; }
 
         public GoogleAuthorize_Attributes(GoogleAuthorize owner) : base(owner)
         {
-            m_UserCredentialTask = null;
-        }
-
-        private void SetCredential()
-        {
-            using (OpenFileDialog openFileDialog = new OpenFileDialog())
-            {
-                openFileDialog.Title = "Select your client secret file";
-                openFileDialog.Filter = "|*.json";
-
-                if (openFileDialog.ShowDialog() == DialogResult.OK)
-                {
-                    GoogleClientSecrets clientSecrets = GoogleClientSecrets.FromFile(openFileDialog.FileName);
-                    string[] scopes = new string[] { SheetsService.Scope.Spreadsheets };
-                    m_UserCredentialTask = GoogleWebAuthorizationBroker.AuthorizeAsync(clientSecrets.Secrets, scopes, "user", CancellationToken.None);
-                }
-            }
         }
 
         protected override void Layout()
@@ -48,15 +36,33 @@ namespace Goograsshopper.Components.Initializers
             base.Layout();
 
             RectangleF rect = Bounds;
-            rect.Width = 200;
-            rect.Height = 100;
+            rect.Width = 250;
+            rect.Height = 150;
             Bounds = rect;
 
             RectangleF buttonRect = Bounds;
-            buttonRect.Y = buttonRect.Bottom - 22;
+            buttonRect.Y = Bounds.Bottom - 22;
             buttonRect.Height = 22;
             buttonRect.Inflate(-2, -2);
             ButtonBounds = buttonRect;
+
+            RectangleF scopeRect_Drive = Bounds;
+            scopeRect_Drive.Y = Bounds.Bottom - 50;
+            scopeRect_Drive.Height = 22;
+            scopeRect_Drive.Offset(40, 0);
+            ScopeBounds_Drive = scopeRect_Drive;
+
+            RectangleF scopeRect_Sheets = Bounds;
+            scopeRect_Sheets.Y = Bounds.Bottom - 70;
+            scopeRect_Sheets.Height = 22;
+            scopeRect_Sheets.Offset(40, 0);
+            ScopeBounds_Sheets = scopeRect_Sheets;
+
+            RectangleF authRect = Bounds;
+            authRect.Y = Bounds.Bottom - 100;
+            authRect.Height = 22;
+            authRect.Inflate(-2, -2);
+            AuthBounds = authRect;
         }
 
         protected override void Render(GH_Canvas canvas, Graphics graphics, GH_CanvasChannel channel)
@@ -68,7 +74,7 @@ namespace Goograsshopper.Components.Initializers
                 case GH_CanvasChannel.First:
                     foreach (Guid id in Owner.ConnectedIds)
                     {
-                        if (Owner.OnPingDocument().FindObject(id, true) is SpreadSheetAccessors obj)
+                        if (Owner.OnPingDocument().FindObject(id, true) is IAbstractAccessors obj)
                         {
                             RectangleF rect = obj.Attributes.Bounds;
                             rect.Inflate(6, 6);
@@ -86,16 +92,26 @@ namespace Goograsshopper.Components.Initializers
                     fullCapsule.Dispose();
 
                     string text_auth;
-                    if (Owner.GetUserCredential() is UserCredential credential)
+                    if (Credential is UserCredential credential)
                     {
                         var service = new BaseClientService.Initializer() { HttpClientInitializer = credential };
-                        text_auth = Owner.GetUserCredential().Token.AccessToken;
+                        text_auth = Owner.Credential.Token.AccessToken;
                     }
                     else
                     {
                         text_auth = "No authorization";
                     }
-                    graphics.DrawString(text_auth, GH_FontServer.StandardAdjusted, new SolidBrush(Color.Black), Bounds, GH_TextRenderingConstants.CenterCenter);
+                    graphics.DrawString(text_auth, GH_FontServer.StandardAdjusted, new SolidBrush(Color.Black), AuthBounds, GH_TextRenderingConstants.CenterCenter);
+
+                    Action<string, bool, RectangleF> drawScopeString = (string text_scope, bool isScope, RectangleF scopeBounds) =>
+                    {
+                        bool read = Credential is UserCredential && isScope;
+                        Font font = read ? GH_FontServer.StandardAdjusted : new Font(GH_FontServer.StandardAdjusted, FontStyle.Strikeout);
+                        Brush brush = read ? new SolidBrush(Color.Black) : new SolidBrush(Color.Gray);
+                        graphics.DrawString($"* {text_scope} : " + (read ? "Scoped" : "No scopes"), font, brush, scopeBounds, GH_TextRenderingConstants.NearCenter);
+                    };
+                    drawScopeString("Google Drive", m_InputForm is InputForm && m_InputForm.IsDriveScope, ScopeBounds_Drive);
+                    drawScopeString("Google SpreadSheets", m_InputForm is InputForm && m_InputForm.IsSheetsScope, ScopeBounds_Sheets);
 
                     GH_Capsule buttonCapsule = GH_Capsule.CreateTextCapsule(ButtonBounds, ButtonBounds, GH_Palette.Black, "Set a new Client Secret", 2, 0);
                     buttonCapsule.Render(graphics, Selected, false, false);
@@ -122,7 +138,9 @@ namespace Goograsshopper.Components.Initializers
             }
             else if (e.Button == MouseButtons.Left && ButtonBounds.Contains(e.CanvasLocation))
             {
-                SetCredential();
+                m_InputForm = new InputForm();
+                m_InputForm.Show();
+
                 sender.Refresh();
                 return GH_ObjectResponse.Handled;
             }

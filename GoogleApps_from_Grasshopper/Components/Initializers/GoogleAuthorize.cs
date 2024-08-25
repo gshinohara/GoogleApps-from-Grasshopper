@@ -13,20 +13,11 @@ namespace Goograsshopper.Components.Initializers
 
         internal HashSet<Guid> ConnectedIds => m_ids;
 
+        public UserCredential Credential => (Attributes as GoogleAuthorize_Attributes).Credential;
+
         public GoogleAuthorize() : base("Authorization", "Auth", "", Settings.Category, Settings.SubCat_App)
         {
             m_ids = new HashSet<Guid>();
-        }
-
-        public UserCredential GetUserCredential()
-        {
-            var obj = typeof(GoogleAuthorize_Attributes)
-                .GetField("m_UserCredentialTask", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance)
-                .GetValue(Attributes as GoogleAuthorize_Attributes);
-            if (obj is Task<UserCredential> task && task.IsCompleted)
-                return task.Result;
-            else
-                return null;
         }
 
         public override Guid ComponentGuid => new Guid("3A0B491B-53FD-46BA-9765-A722C950D138");

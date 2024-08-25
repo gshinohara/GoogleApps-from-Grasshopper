@@ -1,5 +1,4 @@
 ﻿using Google.Apis.Services;
-using Google.Apis.Sheets.v4;
 using Goograsshopper.Components.Initializers;
 using Grasshopper.GUI;
 using Grasshopper.Kernel;
@@ -8,11 +7,12 @@ using System.Linq;
 
 namespace Goograsshopper.Components.Abstracts
 {
-    public abstract class SpreadSheetAccessors : GH_Component
+    public abstract class AbstractAccessors<TService> : GH_Component, IAbstractAccessors
+        where TService : BaseClientService
     {
         private Guid m_ConnectedId;
 
-        internal GoogleAuthorize Parent
+        public GoogleAuthorize Parent
         {
             get => OnPingDocument().FindObject<GoogleAuthorize>(m_ConnectedId, true);
             set
@@ -22,7 +22,7 @@ namespace Goograsshopper.Components.Abstracts
             }
         }
 
-        public SpreadSheetAccessors(string name, string nickname, string description, string category, string subcategory) : base(name, nickname, description, category, subcategory)
+        public AbstractAccessors(string name, string nickname, string description, string category, string subcategory) : base(name, nickname, description, category, subcategory)
         {
         }
 
@@ -31,11 +31,7 @@ namespace Goograsshopper.Components.Abstracts
             m_ConnectedId = Guid.Empty;
         }
 
-        protected SheetsService GetSheetsService()
-        {
-            SheetsService service = new SheetsService(new BaseClientService.Initializer() { HttpClientInitializer = Parent.GetUserCredential() });
-            return service;
-        }
+        protected abstract TService GetService();
 
         public override void AddedToDocument(GH_Document document)
         {
@@ -46,7 +42,7 @@ namespace Goograsshopper.Components.Abstracts
                 .OrderBy(obj => GH_GraphicsUtil.Distance(Attributes.Pivot, (obj.Attributes as GoogleAuthorize_Attributes).Grip))
                 .FirstOrDefault() as GoogleAuthorize;
 
-            if (googleAuthorize != null && googleAuthorize.GetUserCredential() != null)
+            if (googleAuthorize != null && googleAuthorize.Credential != null)
                 Parent = googleAuthorize;
         }
     }
