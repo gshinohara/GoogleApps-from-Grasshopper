@@ -28,6 +28,14 @@ namespace Goograsshopper.Components
             Access = GH_ParamAccess.item,
         };
 
+        private readonly Param_FilePath m_Input_FilePath_Root = new Param_FilePath
+        {
+            Name = "Root",
+            NickName = "R",
+            Description = "",
+            Access = GH_ParamAccess.item,
+        };
+
         private readonly Param_String m_Input_ID = new Param_String
         {
             Name = "File ID",
@@ -80,8 +88,69 @@ namespace Goograsshopper.Components
                     break;
 
                 case ReadType.FilePath:
-                    //TODO
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Warning, @"Sorry for no implemantations, it don't work with the read type.");
+                    string filePath = default;
+                    string root = default;
+                    DA.GetData("Root", ref root);
+                    DA.GetData("File Path", ref filePath);
+
+                    DrivesResource.ListRequest driveListRequest = GetService().Drives.List();
+                    driveListRequest.PageSize = 100;
+
+                    List<string> pathElements = filePath.Split(System.IO.Path.PathSeparator).ToList();
+                    foreach (Drive drive in driveListRequest.Execute().Drives)
+                    {
+                        if (System.IO.Path.GetFullPath(filePath).Contains(System.IO.Path.Combine(root, drive.Name)))
+                        {
+                            foreach (string element in System.IO.Path.Combine(root, drive.Name).Split(System.IO.Path.PathSeparator))
+                            {
+                                if (pathElements[0] == element)
+                                    pathElements.Remove(element);
+                            }
+                            break;
+                        }
+                    }                 
+
+                    FilesResource.ListRequest fileListRequest = GetService().Files.List();
+                    fileListRequest.IncludeItemsFromAllDrives = true;
+                    fileListRequest.PageSize = 100;
+                    fileListRequest.SupportsAllDrives = true;
+                    fileListRequest.Fields = "nextPageToken, files(name, parents)";
+                    fileListRequest.Q = $"(name = '{pathElements.LastOrDefault()}') and (trashed = false)";
+                  
+                    File file_suggested = null;
+                    foreach (File file_candidates in fileListRequest.Execute().Files)
+                    {
+                        bool isbreak = false;
+
+                        string parent_folder_id = file_candidates.Parents.FirstOrDefault();
+
+                        foreach (string element in pathElements.Reverse<string>())
+                        {
+                            FilesResource.GetRequest parent_folder_get = GetService().Files.Get(parent_folder_id);
+                            parent_folder_get.SupportsAllDrives = true;
+                            parent_folder_get.Fields = "parents, name";
+                            File parent_folder = parent_folder_get.Execute();
+
+                            if (parent_folder.Parents.FirstOrDefault() != null)
+                            {
+                                if (parent_folder.Name == element)
+                                    parent_folder_id = parent_folder.Parents.FirstOrDefault();
+                                else
+                                    break;
+                            }
+                               else
+                                isbreak = true;
+                        }
+
+                        if (isbreak)
+                        {
+                            file_suggested = file_candidates;
+                            break;
+                        }
+                    }
+
+                    DA.SetData("File", file_suggested);
+
                     break;
 
                 case ReadType.URL:
@@ -99,16 +168,28 @@ namespace Goograsshopper.Components
             switch ((ReadType)GetValue("ReadType", (int)ReadType.ID))
             {
                 case ReadType.FilePath:
-                    Message = "File Path";
+                    if (m_Input_FilePath_Root.PersistentData.IsEmpty)
+                        m_Input_FilePath_Root.SetPersistentData(@"G:\Shared drives\");
+
+                    Params.RegisterInputParam(m_Input_FilePath_Root);
                     Params.RegisterInputParam(m_Input_FilePath);
+
+                    Message = "File Path";
+
                     break;
+
                 case ReadType.ID:
-                    Message = "ID";
                     Params.RegisterInputParam(m_Input_ID);
+
+                    Message = "ID";
+
                     break;
+
                 case ReadType.URL:
-                    Message = "URL";
                     Params.RegisterInputParam(m_Input_URL);
+
+                    Message = "URL";
+
                     break;
             }
 
